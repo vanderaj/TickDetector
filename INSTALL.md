@@ -4,6 +4,14 @@
 
 ### Install SQLite3
 
+Fedora:
+
+```shell
+sudo dnf install sqlite
+```
+
+Debian:
+
 ```shell
 sudo apt install sqlite3
 ```
