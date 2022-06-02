@@ -33,7 +33,7 @@ const msgStats = [
   '420',
   '480',
   '540',
-  '600'
+  '600',
 ]
 // var lock = false
 let timer = Date.now()
@@ -53,10 +53,10 @@ function config() {
         function (err, res, body) {
           try {
             if (JSON.parse(body).status == 2) {
-              console.log(`${moment().format()} EDDN DOWN`)
+              console.log('${moment().format()} EDDN DOWN')
             }
           } catch (err) {
-            console.log(`Error parsing ${body}: ${err}`)
+            console.log('Error parsing ${body}: ${err}')
           }
         }
       )
@@ -65,7 +65,7 @@ function config() {
   })
 }
 
-function eddnConnector() {
+function eddnConnector(): void {
   sock.connect('tcp://eddn.edcd.io:9500')
   sock.subscribe('')
   sock.on('close', (fd, ep) => {
@@ -84,31 +84,34 @@ function eddnConnector() {
   })
 }
 
-function storeEntry(entry) {
+function storeEntry (entry) {
   timer = Date.now()
   let parsed = null
   try {
     parsed = JSON.parse(entry)
   } catch (err) {
-    console.log(`err`)
+    console.log('err')
   }
 
-  if (parsed && parsed.header.SoftwareName == 'EDDiscovery') {
+  if (parsed && parsed.header.SoftwareName === 'EDDiscovery') {
     return // Banning EDDiscovery due to their cavalier attitude towards sending bad data.
     // https://discord.com/channels/164411426939600896/419456725075099648/827919387443986442
   }
 
-  if (parsed && parsed.$schemaRef == 'https://eddn.edcd.io/schemas/journal/1') {
-    let systemID = parsed.message.SystemAddress
-    let systemName = parsed.message.StarSystem
-    let systemX = parsed.message.StarPos[0]
-    let systemY = parsed.message.StarPos[1]
-    let systemZ = parsed.message.StarPos[2]
-    let factions = parsed.message.Factions
+  if (
+    parsed &&
+    parsed.$schemaRef === 'https://eddn.edcd.io/schemas/journal/1'
+  ) {
+    const systemID = parsed.message.SystemAddress
+    const systemName = parsed.message.StarSystem
+    const systemX = parsed.message.StarPos[0]
+    const systemY = parsed.message.StarPos[1]
+    const systemZ = parsed.message.StarPos[2]
+    const factions = parsed.message.Factions
     if (systemID && systemName && factions && systemX && systemY && systemZ) {
-      let mTime = moment(parsed.message.timestamp)
-      let gwTime = moment(parsed.header.gatewayTimestamp)
-      let dTime = moment(gwTime).diff(mTime, 'seconds')
+      const mTime = moment(parsed.message.timestamp)
+      const gwTime = moment(parsed.header.gatewayTimestamp)
+      const dTime = moment(gwTime).diff(mTime, 'seconds')
 
       updateStats(
         dTime,
@@ -120,7 +123,7 @@ function storeEntry(entry) {
         parsed.message.timestamp &&
         parsed.header.gatewayTimestamp
       ) {
-        let sql = `INSERT INTO RAW (TIMESTAMP, GW_TIMESTAMP, SOFTWARE, VERSION, MESSAGE) VALUES(?, ?, ?, ?, ?)`
+        const sql = 'INSERT INTO RAW (TIMESTAMP, GW_TIMESTAMP, SOFTWARE, VERSION, MESSAGE) VALUES(?, ?, ?, ?, ?)'
         db.prepare(sql).run(
           parsed.message.timestamp,
           parsed.header.gatewayTimestamp,
@@ -134,22 +137,20 @@ function storeEntry(entry) {
 }
 
 function updateStats(dTime, name, version) {
-  let msgCountSql = `UPDATE MSG_STATS SET COUNT = COUNT + 1 WHERE ROWID = 1`
-  let msgOldestSql = `UPDATE MSG_STATS SET OLDEST = ? WHERE ROWID = 1`
-
-  let softwareCountSql = `INSERT INTO SOFTWARE(SOFTWARE, VERSION, COUNT) VALUES(?, ?, 1) 
-													ON CONFLICT(SOFTWARE, VERSION) DO UPDATE SET COUNT=COUNT+1`
+  const msgCountSql = 'UPDATE MSG_STATS SET COUNT = COUNT + 1 WHERE ROWID = 1'
+  let msgOldestSql = 'UPDATE MSG_STATS SET OLDEST = ? WHERE ROWID = 1'
 
   var oldest = db
     .prepare('SELECT OLDEST FROM MSG_STATS WHERE ROWID = 1')
     .get().OLDEST
 
+  let softwareCountSql = 'INSERT INTO SOFTWARE(SOFTWARE, VERSION, COUNT) VALUES(?, ?, 1) ON CONFLICT(SOFTWARE, VERSION) DO UPDATE SET COUNT=COUNT+1'
   db.prepare(softwareCountSql).run(name, version)
 
   for (let i in msgStats) {
-    let delay = msgStats[i]
+    let delay: number = msgStats[i]
     if (Math.abs(dTime) <= delay * 60) {
-      let msgDelaySql = `UPDATE MSG_STATS SET '${delay}' = MSG_STATS.'${delay}' + 1 WHERE ROWID = 1`
+      let msgDelaySql = 'UPDATE MSG_STATS SET ' + ${delay} + ' = MSG_STATS.' + ${delay} + ' + 1 WHERE ROWID = 1'
       db.prepare(msgDelaySql).run()
     }
   }
