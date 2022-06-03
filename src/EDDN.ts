@@ -49,8 +49,8 @@ function config () {
       (async () => {
         try {
           const response = await got('https://hosting.zaonce.net/launcher-status/status.json')
-          if (JSON.parse(response.body).status == 2) {
-            console.log('${moment().format()} Elite Dangerous Launcher DOWN')
+          if (JSON.parse(response.body).status === 2) {
+            console.log(`${moment().format()} Elite Dangerous Launcher DOWN`)
           }
           timer = Date.now()
         } catch (error) {
@@ -65,13 +65,13 @@ function eddnConnector (): void {
   sock.connect('tcp://eddn.edcd.io:9500')
   sock.subscribe('')
   sock.on('close', (fd, ep) => {
-    setTimeout(eddnConnector(), 60000)
+    setTimeout(() => { eddnConnector() }, 60000)
   })
   sock.on('close_error', (fd, ep) => {
-    setTimeout(eddnConnector(), 60000)
+    setTimeout(() => { eddnConnector() }, 60000)
   })
   sock.on('disconnect', (fd, ep) => {
-    setTimeout(eddnConnector(), 60000)
+    setTimeout(() => { eddnConnector() }, 60000)
   })
   sock.on('message', (topic) => {
     try {
@@ -80,7 +80,7 @@ function eddnConnector (): void {
   })
 }
 
-function storeEntry (entry) {
+function storeEntry (entry: string) {
   timer = Date.now()
   let parsed = null
   try {
@@ -130,7 +130,6 @@ function storeEntry (entry) {
 function updateStats (dTime: number, name: string, version: string) {
   const msgCountSql = 'UPDATE MSG_STATS SET COUNT = COUNT + 1 WHERE ROWID = 1'
   const msgOldestSql = 'UPDATE MSG_STATS SET OLDEST = ? WHERE ROWID = 1'
-  const msgDelaySql = 'UPDATE MSG_STATS SET ? = MSG_STATS.? + 1 WHERE ROWID = 1'
 
   const oldest = db
     .prepare('SELECT OLDEST FROM MSG_STATS WHERE ROWID = 1')
@@ -142,6 +141,7 @@ function updateStats (dTime: number, name: string, version: string) {
   for (const i in msgStats) {
     const delay: number = msgStats[i]
     if (Math.abs(dTime) <= delay * 60) {
+      const msgDelaySql = `UPDATE MSG_STATS SET '${delay}' = MSG_STATS.${delay} + 1 WHERE ROWID = 1`
       db.prepare(msgDelaySql).run(delay, delay)
     }
   }

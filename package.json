@@ -25,6 +25,7 @@
     "path": ">=0.12.7",
     "request": "^2.88.2",
     "socket.io": ">=4.5.1",
+    "socket.io-client": "^4.5.1",
     "zeromq": ">=5.2.8",
     "zlib": ">=1.0.5"
   },

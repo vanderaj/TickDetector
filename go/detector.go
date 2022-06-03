@@ -51,7 +51,7 @@
 //   lock = false
 // }
 
-// function parseEntry(entry) {
+func parseEntry(entry) {
 //   let timer = Date.now()
 //   if (entry.$schemaRef == 'https://eddn.edcd.io/schemas/journal/1') {
 //     let systemID = entry.message.SystemAddress
@@ -80,9 +80,9 @@
 //       }
 //     }
 //   }
-// }
+}
 
-// function setInfluence(systemID, faction, influence, time) {
+func setInfluence(systemID, faction, influence, time) {
 //   let getInfluenceSql = 'SELECT ROWID, SYSTEM, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN FROM INFLUENCE WHERE SYSTEM = ? AND FACTION = ? AND INFLUENCE = ? ORDER BY FIRST_SEEN DESC LIMIT 7'
 //   let setInfluenceSql = 'INSERT INTO INFLUENCE(SYSTEM, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN, COUNT) VALUES(?, ?, ?, ?, ?, 1)'
 //   let updateInfluenceSql = 'UPDATE INFLUENCE SET FIRST_SEEN = ?, LAST_SEEN = ?, COUNT = COUNT +1, DELTA = null WHERE ROWID = ?'
@@ -107,9 +107,9 @@
 //     db.prepare(setInfluenceSql).run(systemID, faction, influence, time, time)
 //     updateDelta(systemID, faction)
 //   }
-// }
+}
 
-// function updateDelta(systemID, faction) {
+func updateDelta(systemID, faction) {
 //   let influencesSql = 'SELECT ROW, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN FROM INFLUENCE WHERE INFLUENCE > 0 AND SYSTEM = ? AND FACTION = ? ORDER BY FIRST_SEEN DESC'
 //   let updateDeltaSql = 'UPDATE INFLUENCE SET DELTA = ? WHERE ROW = ?'
 
@@ -123,9 +123,9 @@
 //       db.prepare(updateDeltaSql).run(delta, influences[j - 1].ROW)
 //     }
 //   }
-// }
+}
 
-// function addSystem(systemID: number, systemName: string, systemX: number, systemY: number, systemZ: number) {
+func addSystem(systemID: number, systemName: string, systemX: number, systemY: number, systemZ: number) {
 //   let sql = 'SELECT ID FROM SYSTEMS WHERE ID=? AND NAME=?'
 //   let result = db.prepare(sql).get(systemID, systemName)
 
@@ -133,4 +133,4 @@
 //     let insertSql = 'INSERT INTO SYSTEMS (ID, NAME, X, Y, Z) VALUES(?, ?, ?, ?, ?)'
 //     db.prepare(insertSql).run(systemID, systemName, systemX, systemY, systemZ)
 //   }
-// }
+}
