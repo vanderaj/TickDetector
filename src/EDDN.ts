@@ -12,8 +12,6 @@ import * as zlib from 'zlib'
 import * as zmq from 'zeromq'
 import * as got from 'got'
 import * as moment from 'moment'
-import * as path from 'path'
-import * as util from 'util'
 
 const sock = zmq.socket('sub')
 const db = new Database('systems.sqlitedb')
@@ -33,7 +31,7 @@ const msgStats = [
   420,
   480,
   540,
-  600,
+  600
 ]
 // var lock = false
 let timer = Date.now()
@@ -43,14 +41,14 @@ let timer = Date.now()
 config()
 console.log('EDDN Listener started')
 
-function config() {
+function config () {
   sock.setsockopt(zmq.ZMQ_RCVHWM, 50)
   eddnConnector()
   setInterval(function () {
     if (Date.now() - timer > 120000) {
       (async () => {
         try {
-          const response = await got ('https://hosting.zaonce.net/launcher-status/status.json')
+          const response = await got('https://hosting.zaonce.net/launcher-status/status.json')
           if (JSON.parse(response.body).status == 2) {
             console.log('${moment().format()} Elite Dangerous Launcher DOWN')
           }
@@ -63,7 +61,7 @@ function config() {
   })
 }
 
-function eddnConnector(): void {
+function eddnConnector (): void {
   sock.connect('tcp://eddn.edcd.io:9500')
   sock.subscribe('')
   sock.on('close', (fd, ep) => {
@@ -134,20 +132,20 @@ function storeEntry (entry) {
   }
 }
 
-function updateStats(dTime: number, name: string, version: string) {
+function updateStats (dTime: number, name: string, version: string) {
   const msgCountSql = 'UPDATE MSG_STATS SET COUNT = COUNT + 1 WHERE ROWID = 1'
-  let msgOldestSql = 'UPDATE MSG_STATS SET OLDEST = ? WHERE ROWID = 1'
-  let msgDelaySql = 'UPDATE MSG_STATS SET ? = MSG_STATS.? + 1 WHERE ROWID = 1'
+  const msgOldestSql = 'UPDATE MSG_STATS SET OLDEST = ? WHERE ROWID = 1'
+  const msgDelaySql = 'UPDATE MSG_STATS SET ? = MSG_STATS.? + 1 WHERE ROWID = 1'
 
-  var oldest = db
+  const oldest = db
     .prepare('SELECT OLDEST FROM MSG_STATS WHERE ROWID = 1')
     .get().OLDEST
 
-  let softwareCountSql = 'INSERT INTO SOFTWARE(SOFTWARE, VERSION, COUNT) VALUES(?, ?, 1) ON CONFLICT(SOFTWARE, VERSION) DO UPDATE SET COUNT=COUNT+1'
+  const softwareCountSql = 'INSERT INTO SOFTWARE(SOFTWARE, VERSION, COUNT) VALUES(?, ?, 1) ON CONFLICT(SOFTWARE, VERSION) DO UPDATE SET COUNT=COUNT+1'
   db.prepare(softwareCountSql).run(name, version)
 
-  for (let i in msgStats) {
-    let delay: number = msgStats[i]
+  for (const i in msgStats) {
+    const delay: number = msgStats[i]
     if (Math.abs(dTime) <= delay * 60) {
       db.prepare(msgDelaySql).run(delay, delay)
     }

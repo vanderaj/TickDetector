@@ -23,7 +23,7 @@ const port = 9001
 
 const db = new Database('systems.sqlitedb')
 
-var lock = false
+let lock = false
 
 config()
 console.log('Tick Publisher started')
@@ -63,29 +63,29 @@ function configAPI () {
   app.listen(port)
 
   router.get('/testTicks', (req, res) => {
-    const freshness = req.query['freshness'] ? req.query['freshness'] : 7200
-    const threshold = req.query['threshold'] ? req.query['threshold'] : 5
-    const delta = req.query['delta'] ? req.query['delta'] : 1800
+    const freshness = parseInt(req.query.freshness) ? req.query.freshness : 7200
+    const threshold = req.query.threshold ? req.query.threshold : 5
+    const delta = req.query.delta ? req.query.delta : 1800
     const ticks = allTicks(freshness, threshold, delta)
-    if (req.query['table']) {
+    if (req.query.table) {
       const transform = {
         tag: 'tr',
         children: [
           {
             tag: 'td',
-            html: '${start}'
+            html: `${start}`
           },
           {
             tag: 'td',
-            html: '${detected}'
+            html: `${detected}`
           },
           {
             tag: 'td',
-            html: '${size}'
+            html: `${size}`
           },
           {
             tag: 'td',
-            html: '${delay}'
+            html: `${delay}`
           }
         ]
       }
@@ -103,8 +103,8 @@ function configAPI () {
   })
 
   router.get('/ticks', (req, res) => {
-    let start = req.query['start'] ? req.query['start'] : '2014-12-16'
-    let end = req.query['end'] ? req.query['end'] : new Date()
+    const start = req.query.start ? req.query.start : '2014-12-16'
+    const end = req.query.end ? req.query.end : new Date()
     res.json(getTicks(start, end))
   })
 
@@ -113,52 +113,50 @@ function configAPI () {
   })
 }
 
-function getLastTick() {
-  let tickSql = `SELECT TIME FROM TICK ORDER BY TIME DESC LIMIT 1`
-  let rs = db.prepare(tickSql).get()
+function getLastTick () {
+  const tickSql = 'SELECT TIME FROM TICK ORDER BY TIME DESC LIMIT 1'
+  const rs = db.prepare(tickSql).get()
   if (rs && rs.TIME) {
     return rs.TIME
   }
 }
 
-function calculateTicks(freshness, threshold, delta) {
+function calculateTicks (freshness: number, threshold: number, delta: number) {
   if (lock) {
     return
   }
-  let runStart = new moment()
+  const runStart = new moment()
 
   lock = true
 
-  let getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE
-		WHERE DATETIME(FIRST_SEEN) >= DATETIME(?) 
-		AND INFLUENCE > 0 AND DELTA IS NOT NULL AND DELTA <= ${freshness}`
+  const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE WHERE DATETIME(FIRST_SEEN) >= DATETIME(?) AND INFLUENCE > 0 AND DELTA IS NOT NULL AND DELTA <= ${freshness}`
 
   let start = moment().subtract(1, 'month').format('YYYY-MM-DDTHH:mm:ssZ')
 
-  let lastTick = getLastTick()
+  const lastTick = getLastTick()
   if (lastTick) {
     start = moment(lastTick).format('YYYY-MM-DDTHH:mm:ssZ')
   }
 
-  let data = []
+  const data = []
 
-  let timesRS = db.prepare(getTimesSql).all(start)
+  const timesRS = db.prepare(getTimesSql).all(start)
   if (Array.isArray(timesRS) && timesRS.length) {
-    for (let i in timesRS) {
+    for (const i in timesRS) {
       data.push([moment(timesRS[i].FIRST_SEEN).format('X')])
     }
   }
 
-  let dbscan = new clustering.DBSCAN()
-  let clusters = dbscan.run(data, delta, threshold)
+  const dbscan = new clustering.DBSCAN()
+  const clusters = dbscan.run(data, delta, threshold)
 
-  let noise = dbscan.noise
-  for (let i in clusters) {
-    let sorted = clusters[i].map((x) => data[x]).sort()
-    let size = sorted.length
-    let start = new moment(sorted[0], 'X')
-    let end = new moment(sorted[size - 1], 'X')
-    let detected = new moment(sorted[threshold - 1], 'X')
+  const noise = dbscan.noise
+  for (const i in clusters) {
+    const sorted = clusters[i].map((x) => data[x]).sort()
+    const size = sorted.length
+    const start = new moment(sorted[0], 'X')
+    const end = new moment(sorted[size - 1], 'X')
+    const detected = new moment(sorted[threshold - 1], 'X')
     if (i >= 1) {
       console.log(
         `Tick - ${start.format('YYYY-MM-DD HH:mm:ss')} - ${detected.format(
@@ -167,65 +165,65 @@ function calculateTicks(freshness, threshold, delta) {
       )
       io.sockets.emit('tick', start.format('YYYY-MM-DDTHH:mm:ssZ'))
       io.sockets.send(start.format('YYYY-MM-DDTHH:mm:ssZ'))
-      for (let s in io.sockets['sockets']) {
-        console.log(io.sockets['sockets'][s]['conn']['remoteAddress'])
+      for (const s in io.sockets.sockets) {
+        console.log(io.sockets.sockets[s].conn.remoteAddress)
       }
     }
     saveTick(start)
   }
-  let runEnd = new moment()
+  const runEnd = new moment()
   setTimeout(() => {
     lock = false
   }, 30000)
 }
 
-function saveTick(time) {
-  let tickSql = 'INSERT INTO TICK(TIME) VALUES(?)'
+function saveTick (time) {
+  const tickSql = 'INSERT INTO TICK(TIME) VALUES(?)'
 
   db.prepare(tickSql).run(moment(time).format('YYYY-MM-DDTHH:mm:ssZ'))
 }
 
-function getTicks(start, end) {
+function getTicks (start, end) {
   start = moment(start).format('YYYY-MM-DD')
   end = moment(end).format('YYYY-MM-DD')
-  let tickSql = `SELECT TIME FROM TICK WHERE DATE(TIME) BETWEEN ? and ?`
-  let ticks = db.prepare(tickSql).all(start, end)
+  const tickSql = 'SELECT TIME FROM TICK WHERE DATE(TIME) BETWEEN ? and ?'
+  const ticks = db.prepare(tickSql).all(start, end)
   return ticks
 }
 
-function allTicks(freshness, threshold, delta) {
-  let getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE
+function allTicks (freshness, threshold, delta) {
+  const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE
 		WHERE INFLUENCE > 0 AND DELTA <= ${freshness}`
 
-  let data = []
-  let allTicks = []
+  const data = []
+  const allTicks = []
 
-  let timesRS = db.prepare(getTimesSql).all()
+  const timesRS = db.prepare(getTimesSql).all()
   if (Array.isArray(timesRS) && timesRS.length) {
-    for (let i in timesRS) {
+    for (const i in timesRS) {
       data.push([moment(timesRS[i].FIRST_SEEN).format('X')])
     }
   }
 
-  let dbscan = new clustering.DBSCAN()
-  let clusters = dbscan.run(data, delta, threshold)
+  const dbscan = new clustering.DBSCAN()
+  const clusters = dbscan.run(data, delta, threshold)
 
   let counter = 0
-  let noise = dbscan.noise
-  for (let i in clusters) {
-    let sorted = clusters[i].map((x) => data[x]).sort()
-    let size = sorted.length
-    let start = new moment(sorted[0], 'X')
-    let end = new moment(sorted[size - 1], 'X')
-    let detected = new moment(
+  const noise = dbscan.noise
+  for (const i in clusters) {
+    const sorted = clusters[i].map((x) => data[x]).sort()
+    const size = sorted.length
+    const start = new moment(sorted[0], 'X')
+    const end = new moment(sorted[size - 1], 'X')
+    const detected = new moment(
       sorted[threshold - 1] ? sorted[threshold - 1] : sorted[size - 1],
       'X'
     )
-    let tick = {}
-    tick['start'] = start.format('YYYY-MM-DD HH:mm:ss')
-    tick['detected'] = detected.format('YYYY-MM-DD HH:mm:ss')
-    tick['size'] = size
-    tick['delay'] = detected.diff(start, 'minutes')
+    const tick = {}
+    tick.start = start.format('YYYY-MM-DD HH:mm:ss')
+    tick.detected = detected.format('YYYY-MM-DD HH:mm:ss')
+    tick.size = size
+    tick.delay = detected.diff(start, 'minutes')
     allTicks.push(tick)
     counter++
   }
