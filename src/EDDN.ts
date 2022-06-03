@@ -7,33 +7,33 @@
  * as published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
  */
 
-import { Database } from 'better-sqlite3'
+import * as Database from 'better-sqlite3'
 import * as zlib from 'zlib'
-import { zmq } from 'zeromq'
-import { request } from 'request'
+import * as zmq from 'zeromq'
+import * as got from 'got'
 import * as moment from 'moment'
-// import { path } from 'path'
-// import { util } from 'util'
+import * as path from 'path'
+import * as util from 'util'
 
 const sock = zmq.socket('sub')
 const db = new Database('systems.sqlitedb')
 
 const msgStats = [
-  '1',
-  '5',
-  '10',
-  '15',
-  '30',
-  '60',
-  '120',
-  '180',
-  '240',
-  '300',
-  '360',
-  '420',
-  '480',
-  '540',
-  '600',
+  1,
+  5,
+  10,
+  15,
+  30,
+  60,
+  120,
+  180,
+  240,
+  300,
+  360,
+  420,
+  480,
+  540,
+  600,
 ]
 // var lock = false
 let timer = Date.now()
@@ -48,19 +48,17 @@ function config() {
   eddnConnector()
   setInterval(function () {
     if (Date.now() - timer > 120000) {
-      request(
-        'https://hosting.zaonce.net/launcher-status/status.json',
-        function (err, res, body) {
-          try {
-            if (JSON.parse(body).status == 2) {
-              console.log('${moment().format()} EDDN DOWN')
-            }
-          } catch (err) {
-            console.log('Error parsing ${body}: ${err}')
+      (async () => {
+        try {
+          const response = await got ('https://hosting.zaonce.net/launcher-status/status.json')
+          if (JSON.parse(response.body).status == 2) {
+            console.log('${moment().format()} Elite Dangerous Launcher DOWN')
           }
+          timer = Date.now()
+        } catch (error) {
+          console.log(error.response.body)
         }
-      )
-      timer = Date.now()
+      })()
     }
   })
 }
@@ -136,9 +134,10 @@ function storeEntry (entry) {
   }
 }
 
-function updateStats(dTime, name, version) {
+function updateStats(dTime: number, name: string, version: string) {
   const msgCountSql = 'UPDATE MSG_STATS SET COUNT = COUNT + 1 WHERE ROWID = 1'
   let msgOldestSql = 'UPDATE MSG_STATS SET OLDEST = ? WHERE ROWID = 1'
+  let msgDelaySql = 'UPDATE MSG_STATS SET ? = MSG_STATS.? + 1 WHERE ROWID = 1'
 
   var oldest = db
     .prepare('SELECT OLDEST FROM MSG_STATS WHERE ROWID = 1')
@@ -150,8 +149,7 @@ function updateStats(dTime, name, version) {
   for (let i in msgStats) {
     let delay: number = msgStats[i]
     if (Math.abs(dTime) <= delay * 60) {
-      let msgDelaySql = 'UPDATE MSG_STATS SET ' + ${delay} + ' = MSG_STATS.' + ${delay} + ' + 1 WHERE ROWID = 1'
-      db.prepare(msgDelaySql).run()
+      db.prepare(msgDelaySql).run(delay, delay)
     }
   }
 

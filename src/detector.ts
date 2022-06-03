@@ -9,7 +9,7 @@
 
 import * as Database from 'better-sqlite3'
 import * as zlib from 'zlib'
-import * as request from 'request'
+import * as got from 'got'
 import * as moment from 'moment'
 import * as path from 'path'
 
@@ -62,7 +62,7 @@ function parseEntry(entry) {
     let factions = entry.message.Factions
     if (systemID && systemName && factions && systemX && systemY && systemZ) {
       let mTime = moment(entry.message.timestamp)
-      let dTime = moment(entry.header.gatewayTimestamp).diff(mTime, 'seconds'
+      let dTime = moment(entry.header.gatewayTimestamp).diff(mTime, 'seconds')
 
       addSystem(systemID, systemName, systemX, systemY, systemZ)
       if (dTime < 6000 && mTime) {
@@ -97,7 +97,7 @@ function setInfluence(systemID, faction, influence, time) {
       let first = record.FIRST_SEEN
       let last = record.LAST_SEEN
       let row = record.ROW
-      let diff = moment(last).diff(time, 'seconds'
+      let diff = moment(last).diff(time, 'seconds')
       if (i == 0 && diff > 0) {
         db.prepare(updateInfluenceSql).run(first, time, row)
         updateDelta(systemID, faction)
@@ -115,7 +115,7 @@ function updateDelta(systemID, faction) {
 
   let influences = db.prepare(influencesSql).all(systemID, faction)
   if (Array.isArray(influences) && influences.length && influences.length > 1) {
-    for (let j = influences.length - 1 j >= 1 j--) {
+    for (let j = influences.length - 1; j >= 1; j--) {
       let delta = new moment(influences[j - 1].FIRST_SEEN).diff(
         influences[j].LAST_SEEN,
         'seconds'
