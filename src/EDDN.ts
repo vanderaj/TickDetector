@@ -89,11 +89,6 @@ function storeEntry (entry) {
     console.log('err')
   }
 
-  if (parsed && parsed.header.SoftwareName === 'EDDiscovery') {
-    return // Banning EDDiscovery due to their cavalier attitude towards sending bad data.
-    // https://discord.com/channels/164411426939600896/419456725075099648/827919387443986442
-  }
-
   if (
     parsed &&
     parsed.$schemaRef === 'https://eddn.edcd.io/schemas/journal/1'
