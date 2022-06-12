@@ -8,7 +8,7 @@
  */
 
 import * as Database from 'better-sqlite3'
-import * as moment from 'moment'
+import { DateTime } from 'luxon'
 import * as path from 'path'
 import * as clustering from 'density-clustering'
 import { Server } from 'socket.io'
@@ -125,17 +125,16 @@ function calculateTicks (freshness: number, threshold: number, delta: number) {
   if (lock) {
     return
   }
-  const runStart = new moment()
 
   lock = true
 
   const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE WHERE DATETIME(FIRST_SEEN) >= DATETIME(?) AND INFLUENCE > 0 AND DELTA IS NOT NULL AND DELTA <= ${freshness}`
 
-  let start = moment().subtract(1, 'month').format('YYYY-MM-DDTHH:mm:ssZ')
+  let start = DateTime.now().minus({ months: 1 }).toFormat('YYYY-MM-DDTHH:mm:ssZ')
 
   const lastTick = getLastTick()
-  if (lastTick) {
-    start = moment(lastTick).format('YYYY-MM-DDTHH:mm:ssZ')
+  if (lastTick.isValid) {
+    start = lastTick.toFormat('YYYY-MM-DDTHH:mm:ssZ')
   }
 
   const data = []

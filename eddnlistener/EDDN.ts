@@ -11,7 +11,7 @@ import * as Database from 'better-sqlite3'
 import * as zlib from 'zlib'
 import * as zmq from 'zeromq'
 import * as got from 'got'
-import * as moment from 'moment'
+import { DateTime } from 'luxon'
 
 const sock = zmq.socket('sub')
 const db = new Database('systems.sqlitedb')
@@ -34,7 +34,7 @@ const msgStats = [
   600
 ]
 // var lock = false
-let timer = Date.now()
+let timer = DateTime.now()
 
 // const thanks = ['Garud', 'Lyrae Cursorius', 'Purrfect']
 

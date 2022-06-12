@@ -1,5 +1,5 @@
 import * as Database from 'better-sqlite3'
-import * as moment from 'moment'
+import { DateTime } from 'luxon'
 import * as clustering from 'density-clustering'
 
 const db = new Database('systems.sqlitedb')
@@ -30,9 +30,11 @@ function calculateTicks () {
     const sorted = clusters[i].map((x) => data[x]).sort()
     const size = sorted.length
 
-    const start = moment.defaultFormat()
+    // const start = moment.defaultFormat()
+    // const start = new moment(sorted[0], 'X')
 
-    const start = new moment(sorted[0], 'X')
+
+
     const detected = new moment(
       sorted[threshold - 1] ? sorted[threshold - 1] : sorted[size - 1],
       'X'

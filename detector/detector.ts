@@ -8,7 +8,7 @@
  */
 
 import * as Database from 'better-sqlite3'
-import * as moment from 'moment'
+import { DateTime } from 'luxon'
 
 // import * as zlib from 'zlib'
 // import * as got from 'got'
