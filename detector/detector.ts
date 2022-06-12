@@ -8,18 +8,18 @@
  */
 
 import * as Database from 'better-sqlite3'
-import * as zlib from 'zlib'
-import * as got from 'got'
 import * as moment from 'moment'
-import * as path from 'path'
 
-import * as util from 'util'
+// import * as zlib from 'zlib'
+// import * as got from 'got'
+// import * as path from 'path'
+// import * as util from 'util'
 
 const db = new Database('systems.sqlitedb')
 
 let lock = false
 
-const thanks = ['Garud', 'Lyrae Cursorius', 'Purrfect']
+// const thanks = ['Garud', 'Lyrae Cursorius', 'Purrfect']
 
 config()
 console.log('EDDN Processor started')
@@ -36,24 +36,24 @@ function getEntries () {
   lock = true
   const selectSql = 'SELECT ROW, TIMESTAMP, GW_TIMESTAMP, SOFTWARE, VERSION, MESSAGE FROM RAW ORDER BY ROW ASC LIMIT 10'
   let deleteSql = 'DELETE FROM RAW WHERE ROW IN (?)'
-  const countSql = 'SELECT COUNT(ROW) AS COUNT FROM RAW'
+  // const countSql = 'SELECT COUNT(ROW) AS COUNT FROM RAW'
   const results = db.prepare(selectSql).all()
   let rowIDs = ''
   for (const i in results) {
     parseEntry(JSON.parse(results[i].MESSAGE))
-    rowIDs = '${rowIDs},${results[i].ROW}'
+    rowIDs = `${rowIDs},${results[i].ROW}`
   }
   if (rowIDs) {
     rowIDs = rowIDs.slice(1)
-    deleteSql = 'DELETE FROM RAW WHERE ROW IN (${rowIDs})'
+    deleteSql = `DELETE FROM RAW WHERE ROW IN (${rowIDs})`
     db.exec(deleteSql)
   }
   lock = false
 }
 
 function parseEntry (entry) {
-  const timer = Date.now()
-  if (entry.$schemaRef == 'https://eddn.edcd.io/schemas/journal/1') {
+  // const timer = Date.now()
+  if (entry.$schemaRef === 'https://eddn.edcd.io/schemas/journal/1') {
     const systemID = entry.message.SystemAddress
     const systemName = entry.message.StarSystem
     const systemX = entry.message.StarPos[0]
@@ -91,14 +91,14 @@ function setInfluence (systemID, faction, influence, time) {
     .prepare(getInfluenceSql)
     .all(systemID, faction, influence)
   if (Array.isArray(influences) && influences.length) {
-    const current_first_seen = influences[0].FIRST_SEEN
+    // const current_first_seen = influences[0].FIRST_SEEN
     for (const i in influences) {
       const record = influences[i]
       const first = record.FIRST_SEEN
       const last = record.LAST_SEEN
       const row = record.ROW
       const diff = moment(last).diff(time, 'seconds')
-      if (i == 0 && diff > 0) {
+      if (i === 0 && diff > 0) {
         db.prepare(updateInfluenceSql).run(first, time, row)
         updateDelta(systemID, faction)
       }

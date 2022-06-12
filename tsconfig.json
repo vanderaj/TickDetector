@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
-        "allowJs": true
+        "allowJs": false,
+        "rootDirs": ["tick", "client", "detector", "eddnlistener"]
     },
     "exclude": [
         "node_modules",
