@@ -6,7 +6,7 @@
 
 // Language: go
 
-package tickdetector
+package main
 
 func NewTickServer() *TickServer {
 	return &TickServer{}

@@ -22,13 +22,13 @@ let lock = false
 // const thanks = ['Garud', 'Lyrae Cursorius', 'Purrfect']
 
 config()
-console.log('EDDN Processor started')
+console.log('Tick Detector started')
 
-function config () {
-  setInterval(getEntries, 1000)
+function config() {
+  setInterval(getEntries, 1000) // every second
 }
 
-function getEntries () {
+function getEntries() {
   if (lock) {
     return
   }
@@ -51,7 +51,7 @@ function getEntries () {
   lock = false
 }
 
-function parseEntry (entry) {
+function parseEntry(entry) {
   // const timer = Date.now()
   if (entry.$schemaRef === 'https://eddn.edcd.io/schemas/journal/1') {
     const systemID = entry.message.SystemAddress
@@ -62,19 +62,14 @@ function parseEntry (entry) {
     const factions = entry.message.Factions
     if (systemID && systemName && factions && systemX && systemY && systemZ) {
       const mTime = moment(entry.message.timestamp)
-      const dTime = moment(entry.header.gatewayTimestamp).diff(mTime, 'seconds')
+      const dTime = moment(entry.header.gatewayTimestamp).diff(mTime, 'seconds') // Uses ISO 8601 format
 
       addSystem(systemID, systemName, systemX, systemY, systemZ)
       if (dTime < 6000 && mTime) {
         for (const i in entry.message.Factions) {
           const faction = entry.message.Factions[i]
           if (faction.Influence > 0) {
-            setInfluence(
-              systemID,
-              faction.Name,
-              faction.Influence,
-              mTime.format()
-            )
+            setInfluence(systemID, faction.Name, faction.Influence, mTime.format())
           }
         }
       }
@@ -82,14 +77,15 @@ function parseEntry (entry) {
   }
 }
 
-function setInfluence (systemID, faction, influence, time) {
-  const getInfluenceSql = 'SELECT ROWID, SYSTEM, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN FROM INFLUENCE WHERE SYSTEM = ? AND FACTION = ? AND INFLUENCE = ? ORDER BY FIRST_SEEN DESC LIMIT 7'
-  const setInfluenceSql = 'INSERT INTO INFLUENCE(SYSTEM, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN, COUNT) VALUES(?, ?, ?, ?, ?, 1)'
-  const updateInfluenceSql = 'UPDATE INFLUENCE SET FIRST_SEEN = ?, LAST_SEEN = ?, COUNT = COUNT +1, DELTA = null WHERE ROWID = ?'
+function setInfluence(systemID: number, faction: string, influence: number, time: number) {
+  const getInfluenceSql =
+    'SELECT ROWID, SYSTEM, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN FROM INFLUENCE WHERE SYSTEM = ? AND FACTION = ? AND INFLUENCE = ? ORDER BY FIRST_SEEN DESC LIMIT 7'
+  const setInfluenceSql =
+    'INSERT INTO INFLUENCE(SYSTEM, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN, COUNT) VALUES(?, ?, ?, ?, ?, 1)'
+  const updateInfluenceSql =
+    'UPDATE INFLUENCE SET FIRST_SEEN = ?, LAST_SEEN = ?, COUNT = COUNT +1, DELTA = null WHERE ROWID = ?'
 
-  const influences = db
-    .prepare(getInfluenceSql)
-    .all(systemID, faction, influence)
+  const influences = db.prepare(getInfluenceSql).all(systemID, faction, influence)
   if (Array.isArray(influences) && influences.length) {
     // const current_first_seen = influences[0].FIRST_SEEN
     for (const i in influences) {
@@ -109,23 +105,21 @@ function setInfluence (systemID, faction, influence, time) {
   }
 }
 
-function updateDelta (systemID, faction) {
-  const influencesSql = 'SELECT ROW, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN FROM INFLUENCE WHERE INFLUENCE > 0 AND SYSTEM = ? AND FACTION = ? ORDER BY FIRST_SEEN DESC'
+function updateDelta(systemID: number, faction: string) {
+  const influencesSql =
+    'SELECT ROW, FACTION, INFLUENCE, FIRST_SEEN, LAST_SEEN FROM INFLUENCE WHERE INFLUENCE > 0 AND SYSTEM = ? AND FACTION = ? ORDER BY FIRST_SEEN DESC'
   const updateDeltaSql = 'UPDATE INFLUENCE SET DELTA = ? WHERE ROW = ?'
 
   const influences = db.prepare(influencesSql).all(systemID, faction)
   if (Array.isArray(influences) && influences.length && influences.length > 1) {
     for (let j = influences.length - 1; j >= 1; j--) {
-      const delta = new moment(influences[j - 1].FIRST_SEEN).diff(
-        influences[j].LAST_SEEN,
-        'seconds'
-      )
+      const delta = new moment(influences[j - 1].FIRST_SEEN).diff(influences[j].LAST_SEEN, 'seconds')
       db.prepare(updateDeltaSql).run(delta, influences[j - 1].ROW)
     }
   }
 }
 
-function addSystem (systemID: number, systemName: string, systemX: number, systemY: number, systemZ: number) {
+function addSystem(systemID: number, systemName: string, systemX: number, systemY: number, systemZ: number) {
   const sql = 'SELECT ID FROM SYSTEMS WHERE ID=? AND NAME=?'
   const result = db.prepare(sql).get(systemID, systemName)
 

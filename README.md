@@ -12,7 +12,9 @@ This listens to EDDN and places relevant system updates into the RAW table.
 
 ### tick-detector
 
-This is a background process that periodically samples data from the database to determine if the tick has been through. It does this using the DBSCAN algorithm, which such advanced technology, it is basically magic. Don't ask me how it works. There's an explanation of cluster distributions in Corman et al fourth edition and I'm still none the wiser. 
+This is a background process that periodically samples data from the database to determine if the tick has been through. It does this using the DBSCAN density clustering algorithm, which such advanced technology, it is basically magic. Don't ask me how it works. There's an explanation of density cluster distributions in Corman et al fourth edition. I'm still none the wiser.
+
+[DBSCAN Algorithm](https://github.com/uhho/density-clustering)
 
 ### tick-server
 

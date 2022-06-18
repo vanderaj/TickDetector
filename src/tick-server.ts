@@ -7,12 +7,12 @@
  * as published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
  */
 
-import * as Database from 'better-sqlite3'
 import { DateTime } from 'luxon'
-import * as path from 'path'
-import * as clustering from 'density-clustering'
 import { Server } from 'socket.io'
+import * as clustering from 'density-clustering'
+import Database from 'better-sqlite3'
 import * as express from 'express'
+import * as path from 'path'
 
 // @ts-ignore
 import * as json2html from 'node-json2html'
@@ -26,7 +26,7 @@ const db = new Database('systems.sqlitedb')
 let lock = false
 
 config()
-console.log('Tick Publisher started')
+console.log('Tick Server started')
 
 function config () {
   // Express
@@ -37,9 +37,7 @@ function config () {
   io.on('connection', function (sock) {
     sock.send(getLastTick())
     console.log(
-      `New connection: ${moment().format()} - ${
-        sock.client.conn.remoteAddress
-      }`
+      `New connection: ${DateTime.now().toLocaleString()} - ${sock.client.conn.remoteAddress}`
     )
   })
 
@@ -48,7 +46,7 @@ function config () {
   const threshold = 5
   const delta = 7500
   calculateTicks(freshness, threshold, delta)
-  setInterval(calculateTicks, 60000, freshness, threshold, delta)
+  setInterval(calculateTicks, 60000, freshness, threshold, delta) //  60 seconds
 }
 
 function configAPI () {
@@ -138,7 +136,11 @@ function calculateTicks (freshness: number, threshold: number, delta: number) {
   const data = []
 
   const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE WHERE DATETIME(FIRST_SEEN) >= DATETIME(?) AND INFLUENCE > 0 AND DELTA IS NOT NULL AND DELTA <= ${freshness}`
-  const timesRS = db.prepare(getTimesSql).all(start)
+  const timesRS = db.prepare(getTimesSql).all(start, function (err) {
+    if (err) {
+      console.log(err)
+    }
+  })
   if (Array.isArray(timesRS) && timesRS.length) {
     for (const i in timesRS) {
       data.push([moment(timesRS[i].FIRST_SEEN).format('X')])
@@ -153,7 +155,7 @@ function calculateTicks (freshness: number, threshold: number, delta: number) {
     const sorted = clusters[i].map((x) => data[x]).sort()
     const size = sorted.length
     const start = new moment(sorted[0], 'X')
-    const end = new moment(sorted[size - 1], 'X')
+    // const end = new moment(sorted[size - 1], 'X')
     const detected = new moment(sorted[threshold - 1], 'X')
     if (i >= 1) {
       console.log(
