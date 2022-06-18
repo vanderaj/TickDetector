@@ -2,7 +2,6 @@
     "compilerOptions": {
         "allowJs": false,
         "outDir": "dist",
-        "rootDirs": ["tick", "client", "detector", "eddnlistener"]
     },
     "exclude": [
         "node_modules",

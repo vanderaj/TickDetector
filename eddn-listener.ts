@@ -17,21 +17,7 @@ const sock = zmq.socket('sub')
 const db = new Database('systems.sqlitedb')
 
 const msgStats = [
-  1,
-  5,
-  10,
-  15,
-  30,
-  60,
-  120,
-  180,
-  240,
-  300,
-  360,
-  420,
-  480,
-  540,
-  600
+  '1', '5', '10', '15', '30', '60', '120', '180', '240', '300', '360', '420', '480', '540', '600'
 ]
 // var lock = false
 let timer = DateTime.now()
@@ -45,14 +31,16 @@ function config () {
   sock.setsockopt(zmq.ZMQ_RCVHWM, 50)
   eddnConnector()
   setInterval(function () {
-    if (Date.now() - timer > 120000) {
+    if ((Date.now() - timer) > 120000) {
       (async () => {
         try {
-          const response = await got('https://hosting.zaonce.net/launcher-status/status.json')
+          const response = await got(
+            'https://hosting.zaonce.net/launcher-status/status.json'
+          )
           if (JSON.parse(response.body).status === 2) {
             console.log(`${moment().format()} Elite Dangerous Launcher DOWN`)
           }
-          timer = Date.now()
+          timer = DateTime.now()
         } catch (error) {
           console.log(error.response.body)
         }
@@ -65,13 +53,19 @@ function eddnConnector (): void {
   sock.connect('tcp://eddn.edcd.io:9500')
   sock.subscribe('')
   sock.on('close', (fd, ep) => {
-    setTimeout(() => { eddnConnector() }, 60000)
+    setTimeout(() => {
+      eddnConnector()
+    }, 60000)
   })
   sock.on('close_error', (fd, ep) => {
-    setTimeout(() => { eddnConnector() }, 60000)
+    setTimeout(() => {
+      eddnConnector()
+    }, 60000)
   })
   sock.on('disconnect', (fd, ep) => {
-    setTimeout(() => { eddnConnector() }, 60000)
+    setTimeout(() => {
+      eddnConnector()
+    }, 60000)
   })
   sock.on('message', (topic) => {
     try {
@@ -80,11 +74,14 @@ function eddnConnector (): void {
   })
 }
 
-function storeEntry (entry: string) {
-  timer = Date.now()
+function storeEntry (entry: Buffer) {
+  timer = DateTime.now()
+
+  const entryStr = entry.toString()
+
   let parsed = null
   try {
-    parsed = JSON.parse(entry)
+    parsed = JSON.parse(entryStr)
   } catch (err) {
     console.log('err')
   }
@@ -114,7 +111,8 @@ function storeEntry (entry: string) {
         parsed.message.timestamp &&
         parsed.header.gatewayTimestamp
       ) {
-        const sql = 'INSERT INTO RAW (TIMESTAMP, GW_TIMESTAMP, SOFTWARE, VERSION, MESSAGE) VALUES(?, ?, ?, ?, ?)'
+        const sql =
+          'INSERT INTO RAW (TIMESTAMP, GW_TIMESTAMP, SOFTWARE, VERSION, MESSAGE) VALUES(?, ?, ?, ?, ?)'
         db.prepare(sql).run(
           parsed.message.timestamp,
           parsed.header.gatewayTimestamp,
@@ -135,7 +133,8 @@ function updateStats (dTime: number, name: string, version: string) {
     .prepare('SELECT OLDEST FROM MSG_STATS WHERE ROWID = 1')
     .get().OLDEST
 
-  const softwareCountSql = 'INSERT INTO SOFTWARE(SOFTWARE, VERSION, COUNT) VALUES(?, ?, 1) ON CONFLICT(SOFTWARE, VERSION) DO UPDATE SET COUNT=COUNT+1'
+  const softwareCountSql =
+    'INSERT INTO SOFTWARE(SOFTWARE, VERSION, COUNT) VALUES(?, ?, 1) ON CONFLICT(SOFTWARE, VERSION) DO UPDATE SET COUNT=COUNT+1'
   db.prepare(softwareCountSql).run(name, version)
 
   for (const i in msgStats) {

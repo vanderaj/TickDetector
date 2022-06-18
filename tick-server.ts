@@ -128,8 +128,6 @@ function calculateTicks (freshness: number, threshold: number, delta: number) {
 
   lock = true
 
-  const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE WHERE DATETIME(FIRST_SEEN) >= DATETIME(?) AND INFLUENCE > 0 AND DELTA IS NOT NULL AND DELTA <= ${freshness}`
-
   let start = DateTime.now().minus({ months: 1 }).toFormat('YYYY-MM-DDTHH:mm:ssZ')
 
   const lastTick = getLastTick()
@@ -139,6 +137,7 @@ function calculateTicks (freshness: number, threshold: number, delta: number) {
 
   const data = []
 
+  const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE WHERE DATETIME(FIRST_SEEN) >= DATETIME(?) AND INFLUENCE > 0 AND DELTA IS NOT NULL AND DELTA <= ${freshness}`
   const timesRS = db.prepare(getTimesSql).all(start)
   if (Array.isArray(timesRS) && timesRS.length) {
     for (const i in timesRS) {
@@ -149,7 +148,7 @@ function calculateTicks (freshness: number, threshold: number, delta: number) {
   const dbscan = new clustering.DBSCAN()
   const clusters = dbscan.run(data, delta, threshold)
 
-  const noise = dbscan.noise
+  // const noise = dbscan.noise
   for (const i in clusters) {
     const sorted = clusters[i].map((x) => data[x]).sort()
     const size = sorted.length
@@ -190,9 +189,8 @@ function getTicks (start, end) {
   return ticks
 }
 
-function allTicks (freshness, threshold, delta) {
-  const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE
-		WHERE INFLUENCE > 0 AND DELTA <= ${freshness}`
+function allTicks (freshness: number, threshold: number, delta: number) {
+  const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE WHERE INFLUENCE > 0 AND DELTA <= ${freshness}`
 
   const data = []
   const allTicks = []
@@ -207,13 +205,13 @@ function allTicks (freshness, threshold, delta) {
   const dbscan = new clustering.DBSCAN()
   const clusters = dbscan.run(data, delta, threshold)
 
-  let counter = 0
-  const noise = dbscan.noise
+  // let counter = 0
+  // const noise = dbscan.noise
   for (const i in clusters) {
     const sorted = clusters[i].map((x) => data[x]).sort()
     const size = sorted.length
-    const start = new moment(sorted[0], 'X')
-    const end = new moment(sorted[size - 1], 'X')
+    const start = new moment(sorted[0], 'X') // unix timestamp
+    // const end = new moment(sorted[size - 1], 'X')
     const detected = new moment(
       sorted[threshold - 1] ? sorted[threshold - 1] : sorted[size - 1],
       'X'
@@ -224,7 +222,7 @@ function allTicks (freshness, threshold, delta) {
     tick.size = size
     tick.delay = detected.diff(start, 'minutes')
     allTicks.push(tick)
-    counter++
+    // counter++
   }
   return allTicks
 }
