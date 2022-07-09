@@ -4,6 +4,9 @@
   "description": "Elite Dangerous tick detector",
   "main": "tick.js",
   "scripts": {
+    "dev-listener": "ts-node-dev src/eddn-listener.ts",
+    "dev-detector": "ts-node-dev src/tick-detector.ts",
+    "dev-server": "ts-node-dev src/tick-server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "nodemonConfig": {
@@ -48,6 +51,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-vue": "^9.0.1",
     "tslint": "^6.1.3",
-    "typescript": "^4.7.2"
+    "typescript": "^4.7.2",
+    "yarn": "^1.22.19"
   }
 }

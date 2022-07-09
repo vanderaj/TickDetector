@@ -11,13 +11,15 @@ import { DateTime } from 'luxon'
 import { Server } from 'socket.io'
 import * as clustering from 'density-clustering'
 import Database from 'better-sqlite3'
-import * as express from 'express'
+import * as Express from 'express'
 import * as path from 'path'
 
 // @ts-ignore
 import * as json2html from 'node-json2html'
+import { stringify } from 'querystring'
+import moment from 'moment'
 
-const app = express()
+const app: Express.Application = Express()
 const router = express.Router()
 const port = 9001
 
@@ -50,22 +52,22 @@ function config () {
 }
 
 function configAPI () {
-  app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'tick.html')))
-  app.get('/allTicks', (req, res) =>
+  app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'tick.html')))
+  app.get('/allTicks', (_req, res) =>
     res.sendFile(path.join(__dirname, 'allTicks.html'))
   )
-  app.get('/license', (req, res) =>
+  app.get('/license', (_req, res) =>
     res.sendFile(path.join(__dirname, 'license.txt'))
   )
   app.use('/api', router)
   app.listen(port)
 
   router.get('/testTicks', (req, res) => {
-    const freshness = parseInt(req.query.freshness) ? req.query.freshness : 7200
-    const threshold = req.query.threshold ? req.query.threshold : 5
-    const delta = req.query.delta ? req.query.delta : 1800
+    const freshness = parseInt(req.query['freshness']) ? req.query['freshness'] : 7200
+    const threshold = req.query['threshold'] ? req.query['threshold'] : 5
+    const delta = req.query['delta'] ? req.query['delta'] : 1800
     const ticks = allTicks(freshness, threshold, delta)
-    if (req.query.table) {
+    if (req.query['table']) {
       const transform = {
         tag: 'tr',
         children: [
@@ -106,7 +108,7 @@ function configAPI () {
     res.json(getTicks(start, end))
   })
 
-  router.get('/tick', (req, res) => {
+  router.get('/tick', (_req, res) => {
     res.json(getLastTick())
   })
 }
@@ -171,7 +173,7 @@ function calculateTicks (freshness: number, threshold: number, delta: number) {
     }
     saveTick(start)
   }
-  const runEnd = new moment()
+  // const runEnd = new moment()
   setTimeout(() => {
     lock = false
   }, 30000)
@@ -194,8 +196,8 @@ function getTicks (start, end) {
 function allTicks (freshness: number, threshold: number, delta: number) {
   const getTimesSql = `SELECT DISTINCT SYSTEM, FIRST_SEEN, DELTA FROM INFLUENCE WHERE INFLUENCE > 0 AND DELTA <= ${freshness}`
 
-  const data = []
-  const allTicks = []
+  let data: string [] = []
+  let allTicks: Object [] = []
 
   const timesRS = db.prepare(getTimesSql).all()
   if (Array.isArray(timesRS) && timesRS.length) {
@@ -218,13 +220,22 @@ function allTicks (freshness: number, threshold: number, delta: number) {
       sorted[threshold - 1] ? sorted[threshold - 1] : sorted[size - 1],
       'X'
     )
-    const tick = {}
-    tick.start = start.format('YYYY-MM-DD HH:mm:ss')
-    tick.detected = detected.format('YYYY-MM-DD HH:mm:ss')
-    tick.size = size
-    tick.delay = detected.diff(start, 'minutes')
+    type Tick = {
+      start: string,
+      detected: string,
+      size: Number,
+      delay: Number
+    }
+
+    const tick: Tick = {
+      start: start.format('YYYY-MM-DD HH:mm:ss'),
+      detected = detected.format('YYYY-MM-DD HH:mm:ss'),
+      size = size,
+      delay: detected.diff(start, 'minutes')
+    }
+
     allTicks.push(tick)
-    // counter++
+
   }
   return allTicks
 }

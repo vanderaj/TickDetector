@@ -33,7 +33,7 @@ function calculateTicks () {
     // const start = moment.defaultFormat()
     // const start = new moment(sorted[0], 'X')
 
-
+    
 
     const detected = new moment(
       sorted[threshold - 1] ? sorted[threshold - 1] : sorted[size - 1],
